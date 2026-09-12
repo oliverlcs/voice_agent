@@ -153,6 +153,13 @@ class SessionResponse(BaseModel):
     sdp: str
 
 
+LAZY_FRONTEND_NOTE = (
+    "The backend keeps long-term memories about the user, transcripts of earlier conversations, the LinkedIn "
+    "profile and the files; it looks them up on request. When the user asks what you know about them, about "
+    "their situation, or where you left off last time, delegate. Never answer that from guesswork."
+)
+
+
 @app.post("/api/session", response_model=SessionResponse)
 async def create_session(req: SessionRequest) -> SessionResponse:
     chats = chat_store()
@@ -164,13 +171,18 @@ async def create_session(req: SessionRequest) -> SessionResponse:
 
     mem = memory_store()
     chat_files = chats.files(chat.id)
-    frontend_parts = [p for p in (context.frontend_message(), files_for_frontend(chat_files), mem.frontend_summary()) if p]
+    lazy = user_settings.visible_lookups
+    frontend_parts = [p for p in (
+        context.frontend_message(),
+        files_for_frontend(chat_files),
+        LAZY_FRONTEND_NOTE if lazy else mem.frontend_summary(),
+    ) if p]
     backend_parts = [
         p for p in (
             user_settings.backend_extra(),
-            context.backend_instructions(),
+            context.backend_instructions(lazy=lazy),
             files_for_backend(chat_files),
-            mem.backend_context(),
+            mem.lazy_note() if lazy else mem.backend_context(),
             history_as_text(msgs),
         ) if p
     ]
@@ -389,6 +401,7 @@ class SettingsRequest(BaseModel):
     instructions: str | None = None
     voice: str | None = None
     language: str | None = None
+    visible_lookups: bool | None = None
 
 
 @app.put("/api/settings")

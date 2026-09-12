@@ -72,7 +72,8 @@ def describe(name: str, arguments: str | None, output: str | None) -> dict[str, 
             n = len(od.get("replaced") or [])
             result = "Saved" + (f", replaced {n} older memor{'y' if n == 1 else 'ies'}" if n else "")
     elif name == "recall":
-        title, detail = "Looked in memory", _q(a.get("query", ""))
+        title = "Looked in memory"
+        detail = _q(a.get("query", "")) or ("recent " + str(a.get("kind") or "memories").rstrip("s") + "s")
         if od and not err:
             ms = od.get("memories") or []
             result = f"{len(ms)} memor{'y' if len(ms) == 1 else 'ies'} found"

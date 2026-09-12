@@ -89,6 +89,19 @@ function General({ context, save, refresh, fail }: SectionProps & { refresh: () 
         </div>
       </div>
 
+      <div className="row">
+        <div className="row-between">
+          <div>
+            <div className="row-title">Show lookups as they happen</div>
+            <div className="row-help">Memories, past chats and the LinkedIn profile are fetched with tools during the conversation, so each lookup appears as a card. Slower than having them preloaded.</div>
+          </div>
+          <label className="switch">
+            <input type="checkbox" checked={context.settings.visible_lookups} onChange={e => save({ visible_lookups: e.target.checked })} />
+            <span />
+          </label>
+        </div>
+      </div>
+
       <div className="row col">
         <div className="row-between">
           <div>

@@ -148,6 +148,18 @@ class MemoryStore:
             f"({m.date}) {m.text.rstrip('.')}." for m in items
         )
 
+    @staticmethod
+    def lazy_note() -> str:
+        """Backend note when memories are not preloaded: fetch them with tools, visibly."""
+        return (
+            f"Today is {time.strftime('%Y-%m-%d')}. Long-term memories about the user and transcripts of earlier "
+            "conversations exist but are NOT in this prompt. Before answering anything about the user, their "
+            "situation, or what was discussed before, call recall (memories; use a broad query such as the "
+            "user's situation) and search_chats then read_chat (exact words of earlier conversations). Each memory "
+            "carries the date it was learned; confirm old facts before acting on them. When the user contradicts a "
+            "memory, call remember with the new fact and the old memory's id in replaces."
+        )
+
     def backend_context(self, max_items: int = 60) -> str:
         items = self.recent(limit=max_items)
         if not items:

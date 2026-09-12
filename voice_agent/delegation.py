@@ -23,7 +23,8 @@ async def _run_and_submit(conn: Any, delegation_id: str | None, item: dict, log:
     name, args, call_id = item["name"], item.get("arguments", "{}"), item["call_id"]
     log("tool.call", {"name": name, "arguments": args, "call_id": call_id, "delegation_id": delegation_id})
     output = await asyncio.to_thread(run_tool, name, args)
-    log("tool.result", {"name": name, "output": output[:2000], "call_id": call_id, "delegation_id": delegation_id})
+    # Full output: the user-facing card is described from it; tool_view trims the raw copy it stores.
+    log("tool.result", {"name": name, "output": output, "call_id": call_id, "delegation_id": delegation_id})
     await conn.response.item.create(item={"type": "function_call_output", "call_id": call_id, "output": output})
 
 

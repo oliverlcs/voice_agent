@@ -3,6 +3,9 @@
 - instructions: free text the user wants both models to follow in every conversation.
 - voice: default gpt-live-1 voice for new sessions (immutable once a session runs).
 - language: "auto" (speak whatever the user speaks) or a language name to always answer in.
+- visible_lookups: when true, memories, past chats and the LinkedIn profile are NOT preloaded into
+  the prompts; the backend fetches them with tools during the conversation, so every lookup shows
+  up as a card in the UI. Slower, but transparent (good for demos).
 """
 
 from __future__ import annotations
@@ -31,6 +34,7 @@ class UserSettings:
     instructions: str = ""
     voice: str = "marin"
     language: str = "auto"
+    visible_lookups: bool = False
 
     @classmethod
     def load(cls, defaults: Settings) -> "UserSettings":
@@ -52,6 +56,8 @@ class UserSettings:
         if "language" in raw:
             lang = str(raw["language"] or "auto")
             self.language = lang if lang in LANGUAGES else "auto"
+        if "visible_lookups" in raw:
+            self.visible_lookups = bool(raw["visible_lookups"])
 
     def as_dict(self) -> dict:
         return asdict(self)

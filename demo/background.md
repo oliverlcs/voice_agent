@@ -5,25 +5,30 @@ Fictional. Use her to test every feature of the app. Load the files with `python
 
 ## Two-minute live demo
 
-Before you go on stage (five minutes, do all of it):
+One natural conversation, four turns: recall, recommendation, live web search, ending. Every lookup
+shows up as a card, so the audience sees the agent fetch the profile, memories and the last chat.
 
-1. Restart the server so it runs the current code, then reload the page.
-2. Settings › Connectors must show "Mara Lindqvist". Settings › General must list the CV.
-3. Open a **new chat** and attach `demo/applications.csv` with the plus button *now*, not on stage.
-4. Headphones on, so the agent does not hear itself. Say one test sentence and stop the session.
-5. Do not use web search in the demo. It is slow and the companies are fictional.
+**Before you go on stage** (five minutes, do all of it):
 
-On stage, four exchanges. Say the line, wait for the answer, move on.
+1. `uv run python demo/load.py` once (profile, CV, instructions, switches "Show lookups" on), then
+   `uv run python demo/seed_history.py` (a conversation from four days ago plus six memories). Both are safe to rerun.
+2. Reload the page. Settings › General: "Show lookups as they happen" must be **on**. Settings › Memory must
+   list exactly Mara's six memories dated four days ago; delete anything else (every test session adds some).
+   The sidebar must show the chat "Aurora take-home and what comes next".
+3. Headphones on. Start a new chat, say one sentence, stop it, delete that chat, check Memory again.
+4. Start the demo in a **new chat**.
+
+**On stage.** Say the line, wait, move on.
 
 | You say | What should happen |
 |---------|--------------------|
-| *(press mic)* | Screen greets "Good to see you, Mara." The coach says hello, briefly. |
-| "Look at my LinkedIn and tell me what my last role was." | It says Firmware Lead at Voltaris Mobility **and asks whether that is still right**, instead of assuming. |
-| "Not quite. I ran the team, but the title was never official. My CV says senior engineer." | It accepts the correction plainly and moves on. No lecture. |
-| "Check the file I attached. What do I still owe someone this week?" | A card "Read a file · applications.csv" appears, then it names the Aurora take-home due 16 September and the Kraftwerk onsite on the 19th. |
-| "Remember that I would rather move to Stockholm than Berlin." | A card "Saved to memory". It confirms in one sentence. Press stop. |
+| "Look at my LinkedIn profile. What do you know about me, what is my situation right now, and where did we leave off last time?" | "Let me check." Cards appear one after another: **Read a file · Positions.csv**, **Looked in memory**, **Searched past chats**, **Read a past chat**. Then: firmware at Voltaris, laid off in June, led the team without the official title, interviews at Kraftwerk and Aurora, Stockholm is where she wants to be, and last time she agreed to finish the Aurora take-home and talk to her partner. |
+| "What do you recommend as a next step?" | No plan dump. It picks up the open thread, the Aurora task or the Stockholm conversation, and proposes one small step or asks what she wants to do. |
+| "Thank you. Can you search the current job market for embedded firmware roles in Stockholm?" | "Let me check." A **Searched the web** card, then a short spoken summary of what is actually out there. No invented company names. |
+| "Great, that's what I needed today." | It reflects what shifted and stops. Press stop. |
 
-If a step misfires, say the line again once. The second attempt almost always lands.
+**If it goes wrong.** A missed turn: say the line once more. Web search slow: keep talking, ask what it
+found so far. Never restart the session mid-demo; the first turn with its four cards is the one that impresses.
 
 ## The two traps, explained
 

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from .files import Upload, delete_upload, render_for_backend, save_upload
 from .tools import DATA_DIR, UPLOAD_DIR
@@ -57,9 +58,19 @@ class ContextStore:
             parts.append(f"The user's standing files, which the backend can analyze: {names}.")
         return " ".join(parts) or None
 
-    def backend_instructions(self) -> str:
+    def backend_instructions(self, lazy: bool = False) -> str:
+        """Everything the backend needs about the user. `lazy`: only say what exists and how to
+        fetch it, so the model reads the profile with read_file (visible in the UI) when asked."""
         parts = []
-        if self.linkedin:
+        if self.linkedin and lazy:
+            li = self.linkedin
+            names = ", ".join(sorted({Path(f).name for f in li.get("files", [])}))
+            parts.append(
+                f"The user has imported their LinkedIn profile ({li.get('name', '')}). It is not preloaded: "
+                f"call read_file on the export files before saying anything about it. Files: {names}. "
+                "Positions.csv has the jobs, Profile.csv the headline and summary."
+            )
+        elif self.linkedin:
             li = self.linkedin
             parts.append(
                 "LinkedIn profile of the user, imported from their LinkedIn export:\n" + li.get("text", "")
