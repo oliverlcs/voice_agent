@@ -312,6 +312,9 @@ async def _summarize(state: LiveSessionState) -> None:
     if chat and not chat.title and data.get("title"):
         chats.set_title(chat.id, str(data["title"]))
     saved, removed = [], []
+    if not user_settings.auto_memory:
+        state.log("memory.summarized", {"count": 0, "skipped": "auto_memory off", "title": data.get("title")})
+        return
     for m in data.get("memories", []):
         text = (m.get("text") or "").strip()
         if not text:
@@ -402,6 +405,7 @@ class SettingsRequest(BaseModel):
     voice: str | None = None
     language: str | None = None
     visible_lookups: bool | None = None
+    auto_memory: bool | None = None
 
 
 @app.put("/api/settings")

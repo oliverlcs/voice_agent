@@ -102,6 +102,19 @@ function General({ context, save, refresh, fail }: SectionProps & { refresh: () 
         </div>
       </div>
 
+      <div className="row">
+        <div className="row-between">
+          <div>
+            <div className="row-title">Learn from conversations</div>
+            <div className="row-help">After each session, store new facts about you as memories. Off: nothing is added automatically; the remember tool still works when you ask.</div>
+          </div>
+          <label className="switch">
+            <input type="checkbox" checked={context.settings.auto_memory} onChange={e => save({ auto_memory: e.target.checked })} />
+            <span />
+          </label>
+        </div>
+      </div>
+
       <div className="row col">
         <div className="row-between">
           <div>

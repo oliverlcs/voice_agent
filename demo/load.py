@@ -34,9 +34,9 @@ def main() -> None:
     base = f"http://localhost:{args.port}"
     c = httpx.Client(base_url=base, timeout=30)
 
-    r = c.put("/api/settings", json={"instructions": (HERE / "instructions.txt").read_text().strip(), "visible_lookups": True})
+    r = c.put("/api/settings", json={"instructions": (HERE / "instructions.txt").read_text().strip(), "visible_lookups": True, "auto_memory": False})
     r.raise_for_status()
-    print("settings: instructions set, visible lookups on")
+    print("settings: instructions set, visible lookups on, automatic memory off")
 
     cv = HERE / "cv_mara_lindqvist.md"
     r = c.post("/api/files", files={"file": (cv.name, cv.read_bytes(), "text/markdown")})

@@ -13,9 +13,10 @@ shows up as a card, so the audience sees the agent fetch the profile, memories a
 1. `uv run python demo/load.py` once (profile, CV, instructions, switches "Show lookups" on), then
    `uv run python demo/seed_history.py` (a conversation from four days ago plus six memories). Both are safe to rerun.
 2. Reload the page. Settings › General: "Show lookups as they happen" must be **on**. Settings › Memory must
-   list exactly Mara's six memories dated four days ago; delete anything else (every test session adds some).
+   list exactly Mara's six memories dated four days ago. "Learn from conversations" is off (load.py does that),
+   so test sessions do not add memories; the remember tool still works if you ask on stage.
    The sidebar must show the chat "Aurora take-home and what comes next".
-3. Headphones on. Start a new chat, say one sentence, stop it, delete that chat, check Memory again.
+3. Headphones on. Start a new chat, say one sentence, stop it, delete that chat.
 4. Start the demo in a **new chat**.
 
 **On stage.** Say the line, wait, move on.

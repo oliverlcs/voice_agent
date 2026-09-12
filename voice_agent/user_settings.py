@@ -35,6 +35,7 @@ class UserSettings:
     voice: str = "marin"
     language: str = "auto"
     visible_lookups: bool = False
+    auto_memory: bool = True     # end-of-session summarizer may add/replace memories
 
     @classmethod
     def load(cls, defaults: Settings) -> "UserSettings":
@@ -58,6 +59,8 @@ class UserSettings:
             self.language = lang if lang in LANGUAGES else "auto"
         if "visible_lookups" in raw:
             self.visible_lookups = bool(raw["visible_lookups"])
+        if "auto_memory" in raw:
+            self.auto_memory = bool(raw["auto_memory"])
 
     def as_dict(self) -> dict:
         return asdict(self)

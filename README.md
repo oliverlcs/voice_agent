@@ -50,7 +50,10 @@ reloading the page also lands on a new chat. **Plus** attaches files to the curr
 a modal over the chat:
 
 - **General**: standing instructions (appended to both the voice prompt and the backend prompt),
-  and standing files for every conversation (e.g. the CV).
+  standing files for every conversation (e.g. the CV), and two switches: *Show lookups as they
+  happen* (memories, past chats and the LinkedIn profile are fetched with tools instead of being
+  preloaded, so each lookup is a visible card) and *Learn from conversations* (the end-of-session
+  summarizer may add memories).
 - **Voice**: default gpt-live-1 voice (the 22 built-in names from the SDK; the API has no
   gender attribute) and answer language (auto-detect, or one fixed language via the prompt).
   A voice is immutable per session, so changes apply from the next session on.
