@@ -1,0 +1,5 @@
+Company Name,Title,Description,Location,Started On,Finished On
+Voltaris Mobility GmbH,Firmware Lead,"Led the firmware team (6 engineers) for the VX battery management system used in electric delivery vans. Owned architecture, safety case input (ISO 26262 ASIL C), release process and hiring. Introduced hardware-in-the-loop testing that cut field regressions by roughly 40%.","Munich, Germany",Sep 2022,Jun 2026
+Voltaris Mobility GmbH,Senior Embedded Software Engineer,"Cell monitoring and balancing firmware on an ARM Cortex-M7 platform; CAN and UDS diagnostics; bootloader and secure update path.","Munich, Germany",Jan 2020,Aug 2022
+Helixa Medical AG,Embedded Software Engineer,"Firmware for an infusion pump: motor control, alarm handling and IEC 62304 documentation. Second-line support for field issues.","Zurich, Switzerland",Mar 2018,Dec 2019
+Nordvik Automation AB,Junior Software Engineer,"PLC and C firmware for conveyor controllers; commissioning on customer sites in Sweden and Norway.","Gothenburg, Sweden",Aug 2015,Jun 2017

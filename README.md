@@ -85,6 +85,13 @@ optional `chat_id` and creates a chat when none is given.
 - `POST /api/session/{id}/text` sends a typed message straight to the backend; useful for
   testing without a microphone.
 
+## Demo data
+
+`demo/` holds a fictional persona (Mara Lindqvist, embedded engineer in Munich, recently laid off):
+a LinkedIn export, a CV, standing instructions and a job-application CSV. `uv run python demo/load.py`
+pushes the first three into a running server; `demo/background.md` has the facts that are not in
+any file and a test script that touches every feature.
+
 ## Backend tools (gpt-6-astra)
 
 | Tool | Where it runs | Notes |
