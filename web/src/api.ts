@@ -1,6 +1,6 @@
 export type FileInfo = { name: string; size: number; has_text: boolean }
 export type LinkedInProfile = { name: string; source: string; imported_at: number; files: string[] } | null
-export type MemoryInfo = { id: number; kind: string; text: string; tags: string[]; created_at: number }
+export type MemoryInfo = { id: number; kind: string; text: string; tags: string[]; created_at: number; date: string }
 export type UserSettings = { instructions: string; voice: string; language: string }
 export type ContextInfo = {
   settings: UserSettings

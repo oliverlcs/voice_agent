@@ -52,8 +52,13 @@ future conversations: name, work, family, interests, opinions, goals, decisions,
 Skip: anything about the assistant, small talk, one-off questions, things already listed as
 existing memories, and anything the user asked to forget.
 
+Existing memories are listed with their id and the date they were learned. If the transcript
+shows that an existing memory is no longer true (new job, moved, changed goal, corrected fact),
+put the new memory in the list and the old memory's ids in "replaces"; they will be deleted.
+If the user only asked to forget something, list its id in "forget".
+
 Respond with a JSON object:
-{"title": "...", "memories": [{"text": "...", "kind": "fact|preference|event", "tags": ["..."]}]}
+{"title": "...", "memories": [{"text": "...", "kind": "fact|preference|event", "tags": ["..."], "replaces": [ids]}], "forget": [ids]}
 "title" is a 3 to 6 word name for the conversation, in the user's language, no quotes or trailing period.
-Each memory text is one short sentence in third person ("The user ..."). Return an empty list if nothing qualifies.
+Each memory text is one short sentence in third person ("The user ..."). Return empty lists if nothing qualifies.
 """

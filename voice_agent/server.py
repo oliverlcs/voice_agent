@@ -267,12 +267,12 @@ async def _summarize(state: LiveSessionState) -> None:
         return
 
     mem = memory_store()
-    existing = "\n".join(f"- {m.text}" for m in mem.recent(limit=100)) or "(none)"
+    existing = "\n".join(f"- #{m.id} ({m.date}) {m.text}" for m in mem.recent(limit=100)) or "(none)"
     try:
         resp = await client.responses.create(
             model=settings.backend_model,
             instructions=SUMMARIZER_INSTRUCTIONS,
-            input=f"Existing memories:\n{existing}\n\nTranscript:\n{transcript}\n\nRespond with the JSON object described.",
+            input=f"Today is {time.strftime('%Y-%m-%d')}.\n\nExisting memories:\n{existing}\n\nTranscript:\n{transcript}\n\nRespond with the JSON object described.",
             reasoning={"effort": "low"},
             text={"format": {"type": "json_object"}},
             max_output_tokens=2000,
@@ -284,12 +284,18 @@ async def _summarize(state: LiveSessionState) -> None:
     chat = chats.get(state.chat_id)
     if chat and not chat.title and data.get("title"):
         chats.set_title(chat.id, str(data["title"]))
-    saved = []
+    saved, removed = [], []
     for m in data.get("memories", []):
         text = (m.get("text") or "").strip()
-        if text:
-            saved.append(mem.remember(text, kind=m.get("kind", "fact"), tags=m.get("tags") or []).text)
-    state.log("memory.summarized", {"count": len(saved), "memories": saved, "title": data.get("title")})
+        if not text:
+            continue
+        replaces = [int(str(i).lstrip("#")) for i in (m.get("replaces") or []) if str(i).lstrip("#").isdigit()]
+        saved.append(mem.remember(text, kind=m.get("kind", "fact"), tags=m.get("tags") or [], replaces=replaces).text)
+        removed += replaces
+    for i in data.get("forget", []) or []:
+        if str(i).lstrip("#").isdigit() and mem.forget(int(str(i).lstrip("#"))):
+            removed.append(int(str(i).lstrip("#")))
+    state.log("memory.summarized", {"count": len(saved), "memories": saved, "removed": removed, "title": data.get("title")})
 
 
 @app.get("/api/session/{session_id}")

@@ -124,7 +124,6 @@ function Voice({ context, save }: SectionProps) {
       <div className="row">
         <div>
           <div className="row-title">Default voice</div>
-          <div className="row-help">One of the {context.voices.length} built-in {context.models.live} voices. Applies from the next voice session on.</div>
         </div>
         <select value={s.voice} onChange={e => save({ voice: e.target.value })}>
           {context.voices.map(v => <option key={v} value={v}>{v[0].toUpperCase() + v.slice(1)}</option>)}
@@ -133,7 +132,6 @@ function Voice({ context, save }: SectionProps) {
       <div className="row">
         <div>
           <div className="row-title">Language</div>
-          <div className="row-help">Auto-detect follows whatever language you speak. A fixed language is always used for answers.</div>
         </div>
         <select value={s.language} onChange={e => save({ language: e.target.value })}>
           <option value="auto">Auto-detect</option>
@@ -147,11 +145,12 @@ function Voice({ context, save }: SectionProps) {
 function Connectors({ context, refresh, fail }: { context: ContextInfo; refresh: () => void; fail: (e: unknown) => void }) {
   const li = context.connectors.linkedin
   const [busy, setBusy] = useState(false)
+  const [showInstructions, setShowInstructions] = useState(false)
   const input = useRef<HTMLInputElement>(null)
   const onFile = async (files: FileList | null) => {
     if (!files?.length) return
     setBusy(true)
-    try { await api.importLinkedIn(files[0]); refresh() } catch (e) { fail(e) }
+    try { await api.importLinkedIn(files[0]); setShowInstructions(false); refresh() } catch (e) { fail(e) }
     finally { setBusy(false); if (input.current) input.current.value = '' }
   }
   return (
@@ -162,18 +161,35 @@ function Connectors({ context, refresh, fail }: { context: ContextInfo; refresh:
           <LinkedInIcon />
           <div>
             <div className="row-title">LinkedIn</div>
-            <div className="row-help">
-              {li ? `Imported: ${li.name} (${li.source}, ${new Date(li.imported_at * 1000).toLocaleDateString()})`
-                : 'Import your profile from LinkedIn. On your profile page choose More › Save to PDF, or request the data export under Settings › Data privacy › Get a copy of your data and upload the zip.'}
-            </div>
+            {li && <div className="row-help">
+              {`Imported: ${li.name} (${li.source}, ${new Date(li.imported_at * 1000).toLocaleDateString()})`}
+            </div>}
           </div>
         </div>
         <div className="row-actions">
-          <button className={`btn${li ? '' : ' primary'}`} disabled={busy} onClick={() => input.current?.click()}>{busy ? 'Importing…' : li ? 'Replace' : 'Import'}</button>
+          <button className={`btn${li ? '' : ' primary'}`} disabled={busy} aria-expanded={showInstructions}
+            onClick={() => setShowInstructions(value => !value)}>Import LinkedIn Data</button>
           {li && <button className="btn" onClick={async () => { try { await api.disconnectLinkedIn(); refresh() } catch (e) { fail(e) } }}>Remove</button>}
-          <input ref={input} type="file" accept=".pdf,.zip" hidden onChange={e => onFile(e.target.files)} />
         </div>
       </div>
+      {showInstructions && (
+        <div className="connector-guide">
+          <h3>Import profile from LinkedIn</h3>
+          <ol>
+            <li>Sign in to LinkedIn on a desktop computer.</li>
+            <li>Open <strong>Me → Settings &amp; Privacy → Data Privacy → Download your data</strong>. Select the data you want, then choose <strong>Request archive</strong>.</li>
+            <li>Download the ZIP file from LinkedIn’s email, then import it here.</li>
+          </ol>
+          <div className="row-actions">
+            <a className="btn" href="https://www.linkedin.com/mypreferences/d/download-my-data"
+              target="_blank" rel="noreferrer">Open LinkedIn</a>
+            <button className="btn primary" disabled={busy} onClick={() => input.current?.click()}>
+              {busy ? 'Importing…' : 'Import data'}
+            </button>
+          </div>
+          <input ref={input} type="file" accept=".pdf,.zip" hidden onChange={e => onFile(e.target.files)} />
+        </div>
+      )}
     </>
   )
 }
@@ -183,11 +199,12 @@ function Memory({ context, refresh, fail }: { context: ContextInfo; refresh: () 
     <>
       <h2>Memory</h2>
       <div className="row col">
-        <div className="row-help">What the agent has remembered about you from earlier conversations. Remove anything that is wrong.</div>
+        <div className="row-help">What the agent has remembered about you, newest first, with the date it was learned. Remove anything that is wrong or outdated.</div>
         {context.memories.length === 0 ? <div className="hint">Nothing remembered yet</div> : (
           <ul className="list">
             {context.memories.map(m => (
               <li key={m.id}>
+                <span className="dim date">{m.date}</span>
                 <span className="grow" title={`${m.kind}${m.tags.length ? ' · ' + m.tags.join(', ') : ''}`}>{m.text}</span>
                 <button className="x" aria-label={`forget memory ${m.id}`} onClick={async () => { try { await api.removeMemory(m.id); refresh() } catch (e) { fail(e) } }}>✕</button>
               </li>

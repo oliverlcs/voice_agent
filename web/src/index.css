@@ -111,13 +111,19 @@ body { background: var(--bg); color: var(--fg); }
 .row-actions { display: flex; gap: 8px; }
 .conn { display: flex; align-items: center; gap: 16px; }
 .conn > svg { flex: none; color: var(--muted); }
+.connector-guide { padding: 22px 0 24px; border-bottom: 1px solid var(--border); }
+.connector-guide h3 { margin: 0 0 18px; font-size: 16px; font-weight: 600; }
+.connector-guide ol { margin: 0 0 22px; padding-left: 24px; color: var(--muted); font-size: 14px; line-height: 1.55; }
+.connector-guide li { padding-left: 5px; margin-bottom: 11px; }
+.connector-guide li:last-child { margin-bottom: 0; }
+.connector-guide strong { color: var(--fg); font-weight: 500; }
 
 .settings textarea, .settings select { background: var(--panel-2); color: var(--fg); border: 1px solid var(--border); border-radius: 10px; font: inherit; font-size: 15px; }
 .settings textarea { width: 100%; padding: 12px 14px; line-height: 1.5; resize: vertical; }
 .settings select { padding: 10px 14px; min-width: 200px; cursor: pointer; }
 .settings textarea:focus, .settings select:focus { outline: 1px solid var(--muted); }
 
-.btn { padding: 8px 16px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel-2); color: var(--fg); font-size: 14px; cursor: pointer; white-space: nowrap; }
+.btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px 16px; border: 1px solid var(--border); border-radius: 999px; background: var(--panel-2); color: var(--fg); font-size: 14px; line-height: normal; text-decoration: none; cursor: pointer; white-space: nowrap; }
 .btn:hover { background: #3a3a3a; }
 .btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 .btn.primary:hover { background: #fff; }
@@ -141,3 +147,4 @@ body { background: var(--bg); color: var(--fg); }
   .settings-body { padding: 16px 16px 32px; }
   .row { flex-wrap: wrap; }
 }
+.list .date { flex: none; font-variant-numeric: tabular-nums; }

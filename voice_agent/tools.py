@@ -75,11 +75,11 @@ def get_current_time(timezone: str = "Europe/Berlin") -> str:
     return json.dumps({"timezone": timezone, "iso": now.isoformat(), "human": now.strftime("%A, %d %B %Y, %H:%M")})
 
 
-def remember(text: str, kind: str = "fact", tags: list[str] | None = None) -> str:
+def remember(text: str, kind: str = "fact", tags: list[str] | None = None, replaces: list[int] | None = None) -> str:
     from .memory import store
 
-    m = store().remember(text, kind=kind, tags=tags)
-    return json.dumps({"saved": m.as_dict()})
+    m = store().remember(text, kind=kind, tags=tags, replaces=replaces)
+    return json.dumps({"saved": m.as_dict(), "replaced": replaces or []})
 
 
 def recall(query: str, kind: str | None = None, limit: int = 10) -> str:
@@ -131,7 +131,8 @@ TOOL_SCHEMAS: list[FunctionToolParam] = [
             "Save a lasting fact, preference, or event about the user to long-term memory. "
             "Call this whenever the user states something about themselves that will matter in "
             "future conversations (name, job, family, likes, dislikes, goals, decisions). "
-            "One short sentence per memory."
+            "One short sentence per memory. If the new fact supersedes an existing memory (moved city, "
+            "new job, changed goal), pass that memory's id in replaces so the stale one is removed."
         ),
         "parameters": {
             "type": "object",
@@ -139,6 +140,7 @@ TOOL_SCHEMAS: list[FunctionToolParam] = [
                 "text": {"type": "string", "description": "The memory as one short sentence."},
                 "kind": {"type": "string", "enum": ["fact", "preference", "event"]},
                 "tags": {"type": "array", "items": {"type": "string"}, "description": "Optional keywords."},
+                "replaces": {"type": "array", "items": {"type": "integer"}, "description": "Ids of memories this one supersedes; they are deleted."},
             },
             "required": ["text"],
         },

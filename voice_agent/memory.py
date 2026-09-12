@@ -35,8 +35,12 @@ class Memory:
     text: str
     tags: list[str]
 
+    @property
+    def date(self) -> str:
+        return time.strftime("%Y-%m-%d", time.localtime(self.created_at))
+
     def as_dict(self) -> dict:
-        return {"id": self.id, "created_at": self.created_at, "kind": self.kind, "text": self.text, "tags": self.tags}
+        return {"id": self.id, "created_at": self.created_at, "date": self.date, "kind": self.kind, "text": self.text, "tags": self.tags}
 
 
 class MemoryStore:
@@ -67,7 +71,10 @@ class MemoryStore:
         )
 
     # ---- writes -------------------------------------------------------------
-    def remember(self, text: str, kind: str = "fact", tags: list[str] | None = None) -> Memory:
+    def remember(self, text: str, kind: str = "fact", tags: list[str] | None = None, replaces: list[int] | None = None) -> Memory:
+        """Store a memory. `replaces` deletes the listed memory ids first (a newer fact supersedes older ones)."""
+        for old in replaces or []:
+            self.forget(int(old))
         text = " ".join(text.split())
         if not text:
             raise ValueError("empty memory")
@@ -137,16 +144,23 @@ class MemoryStore:
         items = items[:max_items]
         if not items:
             return None
-        return "What you remember about the user: " + " ".join(m.text.rstrip(".") + "." for m in items)
+        return "What you remember about the user (with the date you learned it): " + " ".join(
+            f"({m.date}) {m.text.rstrip('.')}." for m in items
+        )
 
     def backend_context(self, max_items: int = 60) -> str:
         items = self.recent(limit=max_items)
         if not items:
             return ""
-        lines = ["Long-term memories about the user (newest first; use recall for more):"]
+        lines = [
+            f"Today is {time.strftime('%Y-%m-%d')}. Long-term memories about the user, newest first, each with the date it was learned. "
+            "Old events and facts may no longer be true; when acting on one that is more than a few weeks old, confirm it with the user. "
+            "When the user states something that contradicts a memory, call remember with the new fact and the old memory's id in replaces. "
+            "Use recall for more.",
+        ]
         for m in items:
             tags = f" [{', '.join(m.tags)}]" if m.tags else ""
-            lines.append(f"- #{m.id} ({m.kind}){tags}: {m.text}")
+            lines.append(f"- #{m.id} {m.date} ({m.kind}){tags}: {m.text}")
         return "\n".join(lines)
 
     @staticmethod

@@ -111,8 +111,13 @@ One SQLite table with FTS5 search in `data/memory.sqlite` (`voice_agent/memory.p
 3. **Session end**: when the sideband sees the session close, the logged transcript is sent to
    gpt-6-astra with an extraction prompt and any new facts are stored. Exact duplicates are skipped.
 
-Memories are listed in the plus menu, where each one can be deleted. API: `GET/POST /api/memories`,
-`DELETE /api/memories/{id}`.
+Staleness: every memory carries the date it was learned, and both prompts show it together with
+today's date, with a rule to confirm old facts before acting on them. Newer facts supersede older
+ones instead of piling up: `remember` takes `replaces: [ids]`, and the end-of-session summarizer
+returns `replaces` and `forget` id lists, which the server applies. There is no time-based expiry.
+
+Memories are listed with their date in Settings › Memory, where each one can be deleted.
+API: `GET/POST /api/memories`, `DELETE /api/memories/{id}`.
 
 To check the session-start injection without a microphone, `tests/live_injection_check.py` speaks a
 question to gpt-live-1 via TTS audio and reports what it answered and whether it delegated.
