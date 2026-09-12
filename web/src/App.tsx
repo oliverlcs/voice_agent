@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { api, type ChatDetail, type ChatSummary, type ContextInfo } from './api'
+import { MutedMicIcon, WaveformIcon } from './icons'
 import { PlusMenu } from './PlusMenu'
 import { Settings, type SettingsTab } from './Settings'
 import { Sidebar } from './Sidebar'
@@ -76,14 +77,36 @@ export default function App() {
   const closeSettings = useCallback(() => setSettingsTab(null), [])
 
   const error = live.error ?? uiError
-  const statusText =
-    error ? error
-    : live.status === 'connecting' ? 'Connecting…'
-    : live.status === 'live' ? (live.thinking ? 'Thinking with the backend…' : 'Listening')
-    : active ? 'Press the mic to continue this chat' : 'Press the mic to start'
 
   const stored = active?.messages ?? []
   const empty = stored.length === 0 && live.lines.length === 0
+  const profileName = context?.connectors.linkedin?.name
+  const firstName = profileName && profileName !== 'LinkedIn profile' ? profileName.trim().split(/\s+/)[0] : null
+
+  const voiceButton = (
+    <button
+      className={`round voice ${live.status}`}
+      aria-label={isLive ? 'Stop voice mode' : 'Start voice mode'}
+      onClick={isLive ? live.stop : () => live.start(active?.id ?? null)}
+      disabled={live.status === 'connecting'}
+    >
+      {live.status === 'live' ? '■' : <WaveformIcon size={22} />}
+    </button>
+  )
+
+  const composer = (centered = false) => (
+    <div className={`dock control-dock ${centered ? 'new-chat-dock' : 'conversation-dock'}`}>
+      <PlusMenu chatId={active?.id ?? null} files={active?.files ?? []} ensureChat={ensureChat}
+        refresh={() => { if (active) loadChat(active.id) }} onError={setUiError} />
+      {live.status === 'live' && (
+        <button className={`round mute${live.muted ? ' active' : ''}`} aria-pressed={live.muted}
+          aria-label={live.muted ? 'Unmute microphone' : 'Mute microphone'} onClick={live.toggleMute}>
+          <MutedMicIcon size={21} />
+        </button>
+      )}
+      {voiceButton}
+    </div>
+  )
 
   return (
     <div className="layout">
@@ -95,33 +118,48 @@ export default function App() {
           <button className="menubtn" aria-label="Open chats" onClick={() => setSidebarOpen(true)}>☰</button>
         </header>
 
-        <div className="transcript" ref={scroller}>
-          {empty && <div className="empty">What’s your next career move?</div>}
-          {stored.map(m => (
-            <div key={`s${m.id}`} className={`line ${m.role === 'assistant' ? 'agent' : m.role}`}>{m.text}</div>
-          ))}
-          {live.lines.map(l => <div key={`l${l.id}`} className={`line ${l.role}`}>{l.text}</div>)}
+        <div className={`transcript${empty ? ' is-empty' : ''}`} ref={scroller}>
+          {empty ? (
+            <section className="new-chat-home">
+              {live.status === 'live'
+                ? <VoicePresence level={live.inputLevel} muted={live.muted} thinking={live.thinking} />
+                : <h1>{firstName ? `Good to see you, ${firstName}.` : 'What’s your next career move?'}</h1>}
+              {composer(true)}
+            </section>
+          ) : (
+            <>
+              {stored.map(m => (
+                <div key={`s${m.id}`} className={`line ${m.role === 'assistant' ? 'agent' : m.role}`}>{m.text}</div>
+              ))}
+              {live.lines.map(l => <div key={`l${l.id}`} className={`line ${l.role}`}>{l.text}</div>)}
+            </>
+          )}
         </div>
 
-        <div className="dock">
-          <PlusMenu chatId={active?.id ?? null} files={active?.files ?? []} ensureChat={ensureChat}
-            refresh={() => { if (active) loadChat(active.id) }} onError={setUiError} />
-          <div className={`status${error ? ' error' : ''}`}>{statusText}</div>
-          <button
-            className={`round voice ${live.status}`}
-            aria-label={isLive ? 'Stop voice mode' : 'Start voice mode'}
-            onClick={isLive ? live.stop : () => live.start(active?.id ?? null)}
-            disabled={live.status === 'connecting'}
-          >
-            {live.status === 'live' ? '■' : '🎤'}
-          </button>
-        </div>
+        {!empty && live.status === 'live' && (
+          <VoicePresence level={live.inputLevel} muted={live.muted} thinking={live.thinking} />
+        )}
+        {error && <div className="session-error" role="alert">{error}</div>}
+        {!empty && composer()}
       </main>
 
       {settingsTab && (
         <Settings tab={settingsTab} context={context} onTab={setSettingsTab} onClose={closeSettings}
           refresh={refreshContext} onError={setUiError} />
       )}
+    </div>
+  )
+}
+
+function VoicePresence({ level, muted, thinking }: { level: number; muted: boolean; thinking: boolean }) {
+  const energy = muted ? 0 : Math.min(1, Math.max(0, level))
+  const state = muted ? ' muted' : energy > 0.07 ? ' speaking' : thinking ? ' thinking' : ''
+  return (
+    <div className={`voice-presence${state}`} style={{ '--voice-level': energy } as CSSProperties}
+      role="img" aria-label={muted ? 'Microphone muted' : energy > 0.07 ? 'You are speaking' : 'Listening'}>
+      <span className="voice-ring outer" />
+      <span className="voice-ring inner" />
+      <span className="voice-orb" />
     </div>
   )
 }

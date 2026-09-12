@@ -80,7 +80,6 @@ function General({ context, save, refresh, fail }: SectionProps & { refresh: () 
       <div className="row col">
         <div>
           <div className="row-title">Instructions</div>
-          <div className="row-help">The agent keeps these in mind in every conversation, spoken and in the background.</div>
         </div>
         <textarea value={text} rows={8} maxLength={8000} onChange={e => setText(e.target.value)}
           placeholder={'- Answer really concise.\n- I am looking for embedded systems roles in Munich.'} />

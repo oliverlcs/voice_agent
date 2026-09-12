@@ -19,6 +19,8 @@ export function useLiveSession(opts: Options = {}) {
   const [error, setError] = useState<string | null>(null)
   const [lines, setLines] = useState<Line[]>([])
   const [thinking, setThinking] = useState(false)
+  const [muted, setMuted] = useState(false)
+  const [inputLevel, setInputLevel] = useState(0)
 
   const pc = useRef<RTCPeerConnection | null>(null)
   const dc = useRef<RTCDataChannel | null>(null)
@@ -27,6 +29,10 @@ export function useLiveSession(opts: Options = {}) {
   const sessionId = useRef<string | null>(null)
   const chatId = useRef<string | null>(null)
   const nextId = useRef(1)
+  const meterFrame = useRef<number | null>(null)
+  const meterContext = useRef<AudioContext | null>(null)
+  const smoothedLevel = useRef(0)
+  const mutedRef = useRef(false)
   const optsRef = useRef(opts)
   optsRef.current = opts
 
@@ -35,6 +41,45 @@ export function useLiveSession(opts: Options = {}) {
   // measured on the session timeline (start_ms/end_ms of the fragments).
   const openLine = useRef<Partial<Record<Line['role'], { id: number; endMs: number }>>>({})
   const TURN_GAP_MS = 1200
+
+  const stopMeter = useCallback(() => {
+    if (meterFrame.current !== null) cancelAnimationFrame(meterFrame.current)
+    meterFrame.current = null
+    meterContext.current?.close().catch(() => {})
+    meterContext.current = null
+    smoothedLevel.current = 0
+    setInputLevel(0)
+  }, [])
+
+  const startMeter = useCallback((stream: MediaStream) => {
+    stopMeter()
+    const audioContext = new AudioContext()
+    const analyser = audioContext.createAnalyser()
+    analyser.fftSize = 256
+    analyser.smoothingTimeConstant = 0.65
+    audioContext.createMediaStreamSource(stream).connect(analyser)
+    meterContext.current = audioContext
+    const samples = new Uint8Array(analyser.fftSize)
+    let lastPaint = 0
+    const measure = (time: number) => {
+      if (mutedRef.current) { meterFrame.current = requestAnimationFrame(measure); return }
+      analyser.getByteTimeDomainData(samples)
+      let sum = 0
+      for (const sample of samples) {
+        const centered = (sample - 128) / 128
+        sum += centered * centered
+      }
+      const rms = Math.sqrt(sum / samples.length)
+      const target = Math.min(1, Math.max(0, (rms - 0.012) / 0.16))
+      smoothedLevel.current = smoothedLevel.current * 0.72 + target * 0.28
+      if (time - lastPaint > 40) {
+        setInputLevel(Number(smoothedLevel.current.toFixed(3)))
+        lastPaint = time
+      }
+      meterFrame.current = requestAnimationFrame(measure)
+    }
+    meterFrame.current = requestAnimationFrame(measure)
+  }, [stopMeter])
 
   const append = useCallback((role: Line['role'], text: string, startMs?: number, endMs?: number) => {
     const open = openLine.current[role]
@@ -52,6 +97,7 @@ export function useLiveSession(opts: Options = {}) {
   }, [])
 
   const teardown = useCallback(() => {
+    stopMeter()
     dc.current?.close()
     pc.current?.close()
     mic.current?.getTracks().forEach(t => t.stop())
@@ -65,8 +111,10 @@ export function useLiveSession(opts: Options = {}) {
       api.closeSession(sid).catch(() => {}).finally(() => { if (closedChat) optsRef.current.onClosed?.(closedChat) })
     }
     setThinking(false)
+    mutedRef.current = false
+    setMuted(false)
     setStatus('idle')
-  }, [])
+  }, [stopMeter])
 
   const handleEvent = useCallback((ev: LiveEvent) => {
     switch (ev.type) {
@@ -107,6 +155,8 @@ export function useLiveSession(opts: Options = {}) {
   const start = useCallback(async (forChatId: string | null) => {
     setError(null)
     setLines([])
+    mutedRef.current = false
+    setMuted(false)
     openLine.current = {}
     setStatus('connecting')
     try {
@@ -122,6 +172,7 @@ export function useLiveSession(opts: Options = {}) {
 
       const ms = await navigator.mediaDevices.getUserMedia({ audio: true })
       mic.current = ms
+      startMeter(ms)
       peer.addTrack(ms.getTracks()[0], ms)
 
       const channel = peer.createDataChannel('oai-events')
@@ -149,16 +200,30 @@ export function useLiveSession(opts: Options = {}) {
       teardown()
       setStatus('error')
     }
-  }, [handleEvent, teardown])
+  }, [handleEvent, startMeter, teardown])
 
   const stop = useCallback(() => {
     try { dc.current?.send(JSON.stringify({ type: 'session.close' })) } catch { /* channel may be closed */ }
     teardown()
   }, [teardown])
 
+  /** Mute = stop sending mic audio. The track keeps running (silence is sent), so the
+   *  WebRTC connection and the server-side turn detection stay untouched. */
+  const applyMute = useCallback((next: boolean) => {
+    mutedRef.current = next
+    mic.current?.getAudioTracks().forEach(track => { track.enabled = !next })
+    if (next) { smoothedLevel.current = 0; setInputLevel(0) }
+    setMuted(next)
+  }, [])
+
+  const toggleMute = useCallback(() => {
+    if (!mic.current) return
+    applyMute(!mutedRef.current)
+  }, [applyMute])
+
   const clearLines = useCallback(() => { setLines([]); openLine.current = {} }, [])
 
   useEffect(() => () => teardown(), [teardown])
 
-  return { status, error, lines, thinking, start, stop, clearLines }
+  return { status, error, lines, thinking, muted, inputLevel, start, stop, toggleMute, clearLines }
 }

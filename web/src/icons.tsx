@@ -19,6 +19,18 @@ export const VoiceIcon = ({ size = 18 }: P) => (
   </svg>
 )
 
+export const WaveformIcon = ({ size = 20 }: P) => (
+  <svg {...base(size)}>
+    <path d="M5 10v4M9 7v10M13 4v16M17 8v8M21 10v4" />
+  </svg>
+)
+
+export const MutedMicIcon = ({ size = 20 }: P) => (
+  <svg {...base(size)}>
+    <path d="M9 9v2a3 3 0 0 0 4.7 2.5M15 9V6a3 3 0 0 0-5.8-1M17 11a5 5 0 0 1-.7 2.6M7 11a5 5 0 0 0 7.8 4.2M12 16v4M9 20h6M4 4l16 16" />
+  </svg>
+)
+
 export const PlugIcon = ({ size = 18 }: P) => (
   <svg {...base(size)}>
     <path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0V8zM12 17v4" />
