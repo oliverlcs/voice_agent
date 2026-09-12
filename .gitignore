@@ -1,0 +1,11 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+recordings/
+data/
+web/node_modules/
+web/dist/
+.playwright-mcp/
+
+.logs/
