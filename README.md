@@ -92,6 +92,7 @@ optional `chat_id` and creates a chat when none is given.
 | `run_python` | server subprocess | 60 s timeout, cwd `data/workdir`, **not sandboxed** |
 | `get_current_time` | server | |
 | `remember` / `recall` / `forget` | server | Long-term memory, see below |
+| `search_chats` / `read_chat` | server | Full-text search over saved transcripts (SQLite FTS5), then read one chat |
 
 Add a tool in `voice_agent/tools.py`: a function, a schema entry, and a map entry. Nothing else
 to update: `live_config.py` builds the backend tool list and the voice model's capability list

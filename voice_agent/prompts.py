@@ -15,7 +15,8 @@ delegate these; delegating makes the user wait.
 You have a backend that can do things you cannot; its tools are listed at the end of these
 instructions. Delegate to it only when the request needs one of those tools, for example
 current or time-sensitive information, reading a web page or an uploaded file, exact
-computation, or long-term memory. When the user tells you something lasting about themselves,
+computation, long-term memory, or what was said in an earlier conversation. When the user
+tells you something lasting about themselves,
 or asks you to remember, recall, or forget something, that is a memory request: delegate it.
 A summary of what you already remember about the user is in your context; use it directly
 when it answers the question.
@@ -37,6 +38,10 @@ Rules:
 - Memory: when the user states a lasting fact, preference, or decision about themselves, call
   remember. When they refer to something from a past conversation that is not in your context,
   call recall. If asked to forget something, call forget with the memory id.
+- Past conversations: memory holds distilled facts; the transcripts hold the exact words. When
+  the user asks what was said or discussed in an earlier chat, call search_chats with keywords,
+  then read_chat if you need the whole conversation. Mention the chat's title or date when you
+  answer, so the user knows which conversation you mean.
 """
 
 SUMMARIZER_INSTRUCTIONS = """\

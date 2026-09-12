@@ -177,7 +177,47 @@ TOOL_SCHEMAS: list[FunctionToolParam] = [
             "required": [],
         },
     },
+    {
+        "type": "function",
+        "name": "search_chats",
+        "description": "Search the verbatim transcripts of all past conversations by keywords. Use when the user refers to something they said or were told in an earlier chat ('last time', 'the job we discussed', 'what did you tell me about ...') and it is not in your context or memory. Returns matching passages with chat id, title and date.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "Keywords, not a question."},
+                "limit": {"type": "integer", "description": "Max passages, default 8."},
+            },
+            "required": ["query"],
+        },
+    },
+    {
+        "type": "function",
+        "name": "read_chat",
+        "description": "Read the full transcript of one past conversation by chat id, after search_chats found it. Use when a passage is not enough.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "chat_id": {"type": "string"},
+                "max_chars": {"type": "integer", "description": "Default 6000; the most recent part is kept."},
+            },
+            "required": ["chat_id"],
+        },
+    },
 ]
+
+def search_chats(query: str, limit: int = 8) -> str:
+    from .chats import store
+
+    hits = store().search(query, limit=max(1, min(int(limit), 20)))
+    return json.dumps({"query": query, "hits": hits}, ensure_ascii=False)
+
+
+def read_chat(chat_id: str, max_chars: int = 6000) -> str:
+    from .chats import store
+
+    chat = store().transcript(chat_id, max_chars=max(500, min(int(max_chars), 20000)))
+    return json.dumps(chat or {"error": f"unknown chat {chat_id}"}, ensure_ascii=False)
+
 
 TOOL_FUNCTIONS: dict[str, Callable[..., str]] = {
     "run_python": run_python,
@@ -186,6 +226,8 @@ TOOL_FUNCTIONS: dict[str, Callable[..., str]] = {
     "remember": remember,
     "recall": recall,
     "forget": forget,
+    "search_chats": search_chats,
+    "read_chat": read_chat,
 }
 
 

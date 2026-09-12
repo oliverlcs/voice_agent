@@ -6,6 +6,8 @@ are replayed into the Live session's initial input so the model has the context.
 
 from __future__ import annotations
 
+import datetime as dt
+import re
 import secrets
 import sqlite3
 import threading
@@ -13,6 +15,7 @@ import time
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
+from .memory import STOP_WORDS
 from .files import Upload, delete_directory, delete_upload, render_for_backend, save_upload
 from .tools import DATA_DIR, UPLOAD_DIR
 
@@ -65,6 +68,15 @@ class ChatStore:
                 ts REAL NOT NULL
             );
             CREATE INDEX IF NOT EXISTS messages_chat ON messages(chat_id, id);
+            CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
+                text, content='messages', content_rowid='id', tokenize='porter unicode61'
+            );
+            CREATE TRIGGER IF NOT EXISTS messages_ai AFTER INSERT ON messages BEGIN
+                INSERT INTO messages_fts(rowid, text) VALUES (new.id, new.text);
+            END;
+            CREATE TRIGGER IF NOT EXISTS messages_ad AFTER DELETE ON messages BEGIN
+                INSERT INTO messages_fts(messages_fts, rowid, text) VALUES ('delete', old.id, old.text);
+            END;
             CREATE TABLE IF NOT EXISTS chat_files (
                 chat_id TEXT NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
                 name TEXT NOT NULL,
@@ -76,6 +88,11 @@ class ChatStore:
             """
         )
         self._db.execute("PRAGMA foreign_keys = ON")
+        # Rebuild the index from the content table at startup: cheap, and it covers rows written
+        # before the triggers existed. (count(*) on an external-content table reads the content
+        # table, so it cannot tell whether the index is populated.)
+        self._db.execute("INSERT INTO messages_fts(messages_fts) VALUES ('rebuild')")
+        self._db.commit()
 
     def create(self) -> Chat:
         now = time.time()
@@ -113,6 +130,45 @@ class ChatStore:
         with self._lock:
             self._db.execute("UPDATE chats SET title = ? WHERE id = ?", (title.strip()[:80], chat_id))
             self._db.commit()
+
+    # ---- searching past conversations ----------------------------------------
+    def search(self, query: str, limit: int = 8, context: int = 2) -> list[dict]:
+        """Best-matching messages across all chats, each with a little surrounding dialogue."""
+        terms = [t for t in re.findall(r"\w+", query.lower()) if len(t) > 1 and t not in STOP_WORDS]
+        if not terms:
+            return []
+        match = " OR ".join(f'"{t}"' for t in terms)
+        rows = self._db.execute(
+            "SELECT m.id, m.chat_id, m.ts, c.title FROM messages_fts f "
+            "JOIN messages m ON m.id = f.rowid JOIN chats c ON c.id = m.chat_id "
+            "WHERE messages_fts MATCH ? AND m.role != 'tool' ORDER BY bm25(messages_fts) LIMIT ?",
+            (match, limit),
+        ).fetchall()
+        hits = []
+        for r in rows:
+            around = self._db.execute(
+                "SELECT role, text FROM messages WHERE chat_id = ? AND role != 'tool' AND id BETWEEN ? AND ? ORDER BY id",
+                (r["chat_id"], r["id"] - context, r["id"] + context),
+            ).fetchall()
+            hits.append({
+                "chat_id": r["chat_id"],
+                "title": r["title"] or "Untitled chat",
+                "date": _date(r["ts"]),
+                "passage": "\n".join(f"{'User' if a['role'] == 'user' else 'Assistant'}: {a['text']}" for a in around),
+            })
+        return hits
+
+    def transcript(self, chat_id: str, max_chars: int = 6000) -> dict | None:
+        chat = self.get(chat_id)
+        if chat is None:
+            return None
+        lines = [f"{'User' if m.role == 'user' else 'Assistant'}: {m.text}" for m in self.messages(chat_id) if m.role != "tool"]
+        text = "\n".join(lines)
+        truncated = len(text) > max_chars
+        return {
+            "chat_id": chat.id, "title": chat.title or "Untitled chat", "date": _date(chat.created_at),
+            "transcript": text[-max_chars:] if truncated else text, "truncated": truncated,
+        }
 
     # ---- files attached to one chat ------------------------------------------
     def files(self, chat_id: str) -> list[Upload]:
@@ -154,6 +210,10 @@ class ChatStore:
                 (time.time() - 60,),
             )
             self._db.commit()
+
+
+def _date(ts: float) -> str:
+    return dt.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M")
 
 
 _store: ChatStore | None = None
