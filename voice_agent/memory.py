@@ -139,9 +139,9 @@ class MemoryStore:
 
     # ---- rendering for prompts ---------------------------------------------
     def frontend_summary(self, max_items: int = 8) -> str | None:
-        """A few preferences and facts so gpt-live-1 can answer without delegating."""
-        items = self.recent(limit=max_items, kind="preference") + self.recent(limit=max_items, kind="fact")
-        items = items[:max_items]
+        """The newest memories of every kind, so gpt-live-1 can answer without delegating.
+        Events matter here too: a layoff or the last agreed next step is what "where did we leave off" needs."""
+        items = self.recent(limit=max_items)
         if not items:
             return None
         return "What you remember about the user (with the date you learned it): " + " ".join(
