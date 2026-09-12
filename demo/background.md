@@ -3,15 +3,48 @@
 Fictional. Use her to test every feature of the app. Load the files with `python demo/load.py`
 (server must be running), then open the app and speak as Mara.
 
+## Two-minute live demo
+
+Before you go on stage (five minutes, do all of it):
+
+1. Restart the server so it runs the current code, then reload the page.
+2. Settings › Connectors must show "Mara Lindqvist". Settings › General must list the CV.
+3. Open a **new chat** and attach `demo/applications.csv` with the plus button *now*, not on stage.
+4. Headphones on, so the agent does not hear itself. Say one test sentence and stop the session.
+5. Do not use web search in the demo. It is slow and the companies are fictional.
+
+On stage, four exchanges. Say the line, wait for the answer, move on.
+
+| You say | What should happen |
+|---------|--------------------|
+| *(press mic)* | Screen greets "Good to see you, Mara." The coach says hello, briefly. |
+| "Look at my LinkedIn and tell me what my last role was." | It says Firmware Lead at Voltaris Mobility **and asks whether that is still right**, instead of assuming. |
+| "Not quite. I ran the team, but the title was never official. My CV says senior engineer." | It accepts the correction plainly and moves on. No lecture. |
+| "Check the file I attached. What do I still owe someone this week?" | A card "Read a file · applications.csv" appears, then it names the Aurora take-home due 16 September and the Kraftwerk onsite on the 19th. |
+| "Remember that I would rather move to Stockholm than Berlin." | A card "Saved to memory". It confirms in one sentence. Press stop. |
+
+If a step misfires, say the line again once. The second attempt almost always lands.
+
+## The two traps, explained
+
+The demo data contradicts itself on purpose, so the coach has something to notice.
+
+**Trap 1, the title.** LinkedIn says *Firmware Lead* from September 2022. The CV says *Senior Embedded
+Software Engineer, then team lead*. The truth, which only Mara knows: she ran the team, but the title
+was never made official. A good coach quotes the profile and asks "is that still right?" before
+building on it. A bad one repeats "you were Firmware Lead" as fact.
+
+**Trap 2, the gap.** Nordvik Automation ends June 2017, Helixa Medical starts March 2018. Nine months
+with nothing in either file. The truth: she cycled from Gothenburg to Istanbul. A good coach asks
+about the gap without implying it is a problem. Use it only if you have time; it is not in the
+two-minute script.
+
 ## Who she is (say this in the conversation, it is not in any file)
 
 - 34, Swedish, living in Munich since 2020. Partner works at a Munich hospital and does not want to move.
 - Laid off from Voltaris Mobility in June 2026 in a company-wide restructuring, together with half
   the firmware team. She is not bitter about it but has not really talked about it.
 - Secret wish: move back to Stockholm. The Volta Nord application is the only one she is excited about.
-- Afraid that "team lead" on LinkedIn overstates it: she led the team but never had the title
-  formally, and her CV says "Senior Embedded Software Engineer, then team lead". Good pressure-test.
-- Gap between June 2017 and March 2018: cycled from Gothenburg to Istanbul. Not on the CV.
 - Has a take-home task for Aurora Battery Systems due 16 September that she keeps postponing.
 
 ## What is loaded where
@@ -23,7 +56,7 @@ Fictional. Use her to test every feature of the app. Load the files with `python
 | `instructions.txt` | Settings › General › Instructions | Standing instructions in both prompts |
 | `applications.csv` | Plus menu in one chat (per-chat file) | Per-chat attachments, CSV parsing, `run_python` |
 
-## Test script, roughly in order
+## Full test script (all features, roughly in order)
 
 1. **Greeting**: the new-chat view should say "Good to see you, Mara." once LinkedIn is imported.
 2. **Profile check** (say): "Can you look at my LinkedIn and tell me what my last role was?"
