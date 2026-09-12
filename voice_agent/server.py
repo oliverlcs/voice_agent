@@ -30,6 +30,8 @@ from .context import ContextStore
 from .delegation import handle_backend_event
 from .live_config import webrtc_session_config
 from .memory import store as memory_store
+from .tools import current_chat_id
+from .tool_view import describe as describe_tool, summary_line as tool_summary_line
 from .prompts import SUMMARIZER_INSTRUCTIONS
 from .user_settings import LANGUAGES, VOICES, UserSettings
 
@@ -195,6 +197,7 @@ async def create_session(req: SessionRequest) -> SessionResponse:
 
 async def _run_sideband(state: LiveSessionState) -> None:
     """Trusted server-side attachment: runs tools and observes the conversation."""
+    current_chat_id.set(state.chat_id)   # read_file resolves chat attachments through this
     try:
         async with client.live.sideband.connect(session_id=state.id) as conn:
             state.conn = conn
@@ -226,6 +229,18 @@ async def _run_sideband(state: LiveSessionState) -> None:
         asyncio.create_task(_summarize(state))
 
 
+def _tool_view(state: LiveSessionState, call: dict[str, Any]) -> dict[str, Any]:
+    """Join a tool.call event with its tool.result (by call id) into the user-facing view."""
+    result = next((e for e in state.events if e["kind"] == "tool.result" and e.get("call_id") == call.get("call_id")), None)
+    view = describe_tool(call["name"], call.get("arguments"), result.get("output") if result else None)
+    view["call_id"] = call.get("call_id")
+    return view
+
+
+def _tool_views(state: LiveSessionState) -> list[dict[str, Any]]:
+    return [_tool_view(state, e) for e in state.events if e["kind"] == "tool.call"]
+
+
 def _turns(state: LiveSessionState) -> list[tuple[str, str, float]]:
     """Group transcript fragments into turns: (role, text, wall_time). Same rule as the UI."""
     turns: list[list] = []            # [role, text, wall_time, end_ms]
@@ -235,7 +250,7 @@ def _turns(state: LiveSessionState) -> list[tuple[str, str, float]]:
         if k == "text.sent":
             turns.append(["user", e["text"], e["t"], None]); open_turn.pop("user", None)
         elif k == "tool.call":
-            turns.append(["tool", f"{e['name']}({e.get('arguments', '')[:200]})", e["t"], None])
+            turns.append(["tool", json.dumps(_tool_view(state, e), ensure_ascii=False), e["t"], None])
         elif k in ("transcript.user", "transcript.agent"):
             role = "user" if k == "transcript.user" else "assistant"
             cur = open_turn.get(role)
@@ -262,7 +277,7 @@ async def _summarize(state: LiveSessionState) -> None:
     """Extract memories and a title from the saved transcript."""
     turns = _turns(state)
     chats = chat_store()
-    transcript = "\n".join(f"{'User' if r == 'user' else 'Assistant' if r == 'assistant' else 'Tool'}: {t}" for r, t, _ in turns)
+    transcript = "\n".join(f"{'User' if r == 'user' else 'Assistant' if r == 'assistant' else 'Tool'}: {t if r != 'tool' else tool_summary_line(t)}" for r, t, _ in turns)
     if len(transcript) < 40:
         return
 
@@ -304,6 +319,15 @@ async def session_status(session_id: str) -> dict[str, Any]:
     if st is None:
         raise HTTPException(404, "unknown session")
     return {"id": st.id, "chat_id": st.chat_id, "closed": st.closed, "started_at": st.started_at, "events": list(st.events)[-200:]}
+
+
+@app.get("/api/session/{session_id}/tools")
+async def session_tools(session_id: str) -> dict[str, Any]:
+    """User-facing cards for every tool call of this session, in call order."""
+    st = sessions.get(session_id)
+    if st is None:
+        raise HTTPException(404, "unknown session")
+    return {"tools": _tool_views(st)}
 
 
 @app.post("/api/session/{session_id}/close")

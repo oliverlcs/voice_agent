@@ -1,3 +1,5 @@
+import type { ToolView } from './ToolCard'
+
 export type FileInfo = { name: string; size: number; has_text: boolean }
 export type LinkedInProfile = { name: string; source: string; imported_at: number; files: string[] } | null
 export type MemoryInfo = { id: number; kind: string; text: string; tags: string[]; created_at: number; date: string }
@@ -60,5 +62,6 @@ export const api = {
 
   createSession: (sdp: string, chatId: string | null) =>
     fetch('/api/session', json('POST', { sdp, chat_id: chatId })).then(r => check<{ session_id: string; chat_id: string; sdp: string }>(r)),
+  sessionTools: (id: string) => fetch(`/api/session/${id}/tools`).then(r => check<{ tools: ToolView[] }>(r)),
   closeSession: (id: string) => fetch(`/api/session/${id}/close`, { method: 'POST' }).then(r => check(r)),
 }

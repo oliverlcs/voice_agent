@@ -63,7 +63,7 @@ class ContextStore:
             li = self.linkedin
             parts.append(
                 "LinkedIn profile of the user, imported from their LinkedIn export:\n" + li.get("text", "")
-                + "\nRaw export files (open with run_python if you need more detail): " + ", ".join(li.get("files", []))
+                + "\nRaw export files (read_file by name, or run_python by path, if you need more detail): " + ", ".join(li.get("files", []))
             )
         parts.append(render_for_backend("Standing files the user provided for every conversation", self.uploads))
         return "\n\n".join(p for p in parts if p)

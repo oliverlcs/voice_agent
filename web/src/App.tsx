@@ -4,6 +4,7 @@ import { MutedMicIcon, WaveformIcon } from './icons'
 import { PlusMenu } from './PlusMenu'
 import { Settings, type SettingsTab } from './Settings'
 import { Sidebar } from './Sidebar'
+import { ToolCard, parseToolView } from './ToolCard'
 import { useLiveSession } from './useLiveSession'
 
 const SETTINGS_TABS: SettingsTab[] = ['general', 'voice', 'connectors', 'memory']
@@ -128,10 +129,12 @@ export default function App() {
             </section>
           ) : (
             <>
-              {stored.map(m => (
-                <div key={`s${m.id}`} className={`line ${m.role === 'assistant' ? 'agent' : m.role}`}>{m.text}</div>
-              ))}
-              {live.lines.map(l => <div key={`l${l.id}`} className={`line ${l.role}`}>{l.text}</div>)}
+              {stored.map(m => m.role === 'tool'
+                ? <ToolCard key={`s${m.id}`} view={parseToolView(m.text)} />
+                : <div key={`s${m.id}`} className={`line ${m.role === 'assistant' ? 'agent' : m.role}`}>{m.text}</div>)}
+              {live.lines.map(l => l.role === 'tool'
+                ? <ToolCard key={`l${l.id}`} view={l.tool ?? parseToolView(l.text)} />
+                : <div key={`l${l.id}`} className={`line ${l.role}`}>{l.text}</div>)}
             </>
           )}
         </div>

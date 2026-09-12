@@ -64,12 +64,12 @@ def extract_excerpt(path: Path) -> str:
 
 
 def render_for_backend(title: str, uploads: list[Upload]) -> str:
-    """Absolute paths plus excerpts, so the backend can open the files with run_python."""
+    """Names, paths and excerpts. read_file(name) returns the text; run_python(path) for analysis."""
     if not uploads:
         return ""
-    lines = [f"{title} (absolute paths; open them with run_python):"]
+    lines = [f"{title}. Call read_file with the name to read one; use run_python with the path for analysis:"]
     for u in uploads:
-        lines.append(f"- {u.path} ({u.size} bytes)")
+        lines.append(f"- {u.name} ({u.size} bytes, path {u.path})")
         if u.excerpt:
             lines.append(f"  excerpt: {u.excerpt[:EXCERPT_CHARS]!r}")
     return "\n".join(lines)

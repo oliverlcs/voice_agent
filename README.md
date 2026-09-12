@@ -76,8 +76,10 @@ API: `GET/POST /api/chats`, `GET/PATCH/DELETE /api/chats/{id}`, `POST /api/chats
 `GET /api/context`, `PUT /api/settings`, `POST/DELETE /api/files`; `POST /api/session` takes an
 optional `chat_id` and creates a chat when none is given.
 
-- Uploaded files get their text extracted (PDF, text, CSV, code) and are listed with absolute
-  paths in the backend prompt, so gpt-6-astra can open them with `run_python`.
+- Uploaded files are listed in the backend prompt by name, path and a short excerpt. The model
+  reads them with `read_file(name)`, which resolves the name across the chat's attachments, the
+  standing files and the LinkedIn export (the running chat is passed through a context variable),
+  and computes over them with `run_python(path)`.
 - The imported LinkedIn profile is rendered as text into the backend prompt; the raw files stay
   under `data/linkedin/` for `run_python`.
 - `POST /api/session/{id}/text` sends a typed message straight to the backend; useful for
@@ -89,10 +91,20 @@ optional `chat_id` and creates a chat when none is given.
 |------|---------------|-------|
 | `web_search` | OpenAI hosted | Enabled in `live_config.py` |
 | `fetch_url` | server | Downloads a page and returns readable text |
+| `read_file` | server | Returns an upload's text by name: CSV parsed with columns and row count, PDF all pages, paged via `start` |
 | `run_python` | server subprocess | 60 s timeout, cwd `data/workdir`, **not sandboxed** |
 | `get_current_time` | server | |
 | `remember` / `recall` / `forget` | server | Long-term memory, see below |
 | `search_chats` / `read_chat` | server | Full-text search over saved transcripts (SQLite FTS5), then read one chat |
+
+What the model gets back and what the person sees are two different things. The backend
+receives the raw JSON a tool returns. The UI shows a card built by `voice_agent/tool_view.py`:
+a title ("Searched past chats"), the argument that matters ("berlin"), and a one-line outcome
+("2 matches: Move to Berlin, ..."). The raw call and result sit behind a caret on the card.
+Cards are pending while the call runs; when the backend response completes, the browser
+fetches the finished cards from `GET /api/session/{id}/tools`. Tool rows are persisted as that
+card JSON, and the summarizer sees the one-line summary, never the raw output. Add a tool
+there too: one branch in `describe()` per tool, or the generic fallback is used.
 
 Add a tool in `voice_agent/tools.py`: a function, a schema entry, and a map entry. Nothing else
 to update: `live_config.py` builds the backend tool list and the voice model's capability list

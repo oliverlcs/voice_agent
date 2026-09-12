@@ -1,11 +1,32 @@
+# Secrets
 .env
+.env.*
+!.env.example
+
+# Python
 .venv/
 __pycache__/
 *.pyc
-recordings/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Runtime data: chats, memories, uploads, LinkedIn export, python workdir
 data/
+recordings/
+.logs/
+*.log
+
+# Frontend
 web/node_modules/
 web/dist/
-.playwright-mcp/
 
-.logs/
+# Test artifacts
+.playwright-mcp/
+*.png
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

@@ -76,7 +76,25 @@ body { background: var(--bg); color: var(--fg); }
 .line { padding: 10px 14px; border-radius: 14px; max-width: 85%; line-height: 1.4; white-space: pre-wrap; }
 .line.user { align-self: flex-end; background: var(--panel); color: var(--fg); }
 .line.agent { align-self: flex-start; background: transparent; padding-left: 4px; }
-.line.tool { align-self: flex-start; background: var(--chip); border: 1px solid var(--border); color: var(--muted); font-size: 12px; font-family: ui-monospace, monospace; }
+
+/* Tool cards: what the person sees. The raw exchange with the model is behind the caret. */
+.tool { align-self: flex-start; max-width: 85%; min-width: min(320px, 100%); border: 1px solid var(--border); border-radius: 12px; background: var(--chip); font-size: 13px; overflow: hidden; }
+.tool-head { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px; border: 0; background: none; color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
+.tool-head:hover { background: rgba(255,255,255,.04); }
+.tool-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.tool.pending .tool-dot { background: #7186ff; animation: tool-blink 1s ease-in-out infinite; }
+.tool.done .tool-dot { background: #4caf7d; }
+.tool.error .tool-dot { background: var(--live); }
+.tool-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tool-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tool-detail { font-weight: 400; color: var(--muted); }
+.tool-result { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tool.error .tool-result { color: var(--live); }
+.tool-caret { flex: none; color: var(--muted); font-size: 11px; }
+.tool-raw { border-top: 1px solid var(--border); padding: 8px 12px 10px; }
+.tool-raw-label { margin: 6px 0 4px; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+.tool-raw pre { margin: 0; padding: 8px 10px; max-height: 240px; overflow: auto; border-radius: 8px; background: var(--bg); color: var(--fg); font-size: 12px; font-family: ui-monospace, monospace; white-space: pre-wrap; word-break: break-word; }
+@keyframes tool-blink { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
 
 .dock { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
 .session-error { padding: 8px 0 2px; color: var(--live); font-size: 13px; text-align: center; }

@@ -7,11 +7,20 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { api } from './api'
+import type { ToolView } from './ToolCard'
 
 export type Status = 'idle' | 'connecting' | 'live' | 'error'
-export type Line = { id: number; role: 'user' | 'agent' | 'tool'; text: string }
+export type Line = { id: number; role: 'user' | 'agent' | 'tool'; text: string; tool?: ToolView }
 
 type LiveEvent = { type: string; [k: string]: unknown }
+
+const PENDING_TITLES: Record<string, string> = {
+  web_search: 'Searching the web', fetch_url: 'Reading a web page', run_python: 'Running a calculation',
+  get_current_time: 'Checking the time', remember: 'Saving to memory', recall: 'Looking in memory',
+  forget: 'Forgetting a memory', search_chats: 'Searching past chats', read_chat: 'Reading a past chat',
+}
+const pendingView = (name: string, args: string, callId: string | null): ToolView =>
+  ({ name, title: PENDING_TITLES[name] ?? name.replace(/_/g, ' '), detail: '', result: null, error: null, args, output: null, call_id: callId })
 type Options = { onStarted?: (chatId: string) => void; onClosed?: (chatId: string) => void }
 
 export function useLiveSession(opts: Options = {}) {
@@ -96,6 +105,21 @@ export function useLiveSession(opts: Options = {}) {
     }
   }, [])
 
+  const addTool = useCallback((view: ToolView) => {
+    const id = nextId.current++
+    setLines(prev => [...prev, { id, role: 'tool', text: `${view.name}(${view.args})`, tool: view }])
+  }, [])
+
+  /** Replace the pending cards with the server's finished ones (title, outcome, raw result). */
+  const syncTools = useCallback(() => {
+    const sid = sessionId.current
+    if (!sid) return
+    api.sessionTools(sid).then(({ tools }) => {
+      const byId = new Map(tools.filter(t => t.call_id).map(t => [t.call_id!, t]))
+      setLines(prev => prev.map(l => (l.tool?.call_id && byId.has(l.tool.call_id) ? { ...l, tool: byId.get(l.tool.call_id)! } : l)))
+    }).catch(() => {})
+  }, [])
+
   const teardown = useCallback(() => {
     stopMeter()
     dc.current?.close()
@@ -133,11 +157,12 @@ export function useLiveSession(opts: Options = {}) {
       case 'response.event': {
         const inner = ev.event as LiveEvent
         if (inner.type === 'response.output_item.done') {
-          const item = inner.item as { type: string; name?: string; arguments?: string; action?: { query?: string } }
-          if (item.type === 'function_call') append('tool', `${item.name}(${(item.arguments ?? '').slice(0, 160)})`)
-          else if (item.type === 'web_search_call') append('tool', `web_search(${item.action?.query ?? ''})`)
+          const item = inner.item as { type: string; id?: string; call_id?: string; name?: string; arguments?: string; action?: unknown }
+          if (item.type === 'function_call') addTool(pendingView(item.name ?? 'tool', item.arguments ?? '{}', item.call_id ?? null))
+          else if (item.type === 'web_search_call') addTool(pendingView('web_search', JSON.stringify(item.action ?? {}), item.id ?? null))
         } else if (inner.type === 'response.completed' || inner.type === 'response.failed' || inner.type === 'response.incomplete') {
           setThinking(false)
+          syncTools()
         }
         break
       }
@@ -150,7 +175,7 @@ export function useLiveSession(opts: Options = {}) {
         teardown()
         break
     }
-  }, [append, teardown])
+  }, [append, addTool, syncTools, teardown])
 
   const start = useCallback(async (forChatId: string | null) => {
     setError(null)

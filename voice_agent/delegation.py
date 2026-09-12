@@ -21,9 +21,9 @@ _tool_tasks: dict[str, list[asyncio.Task]] = {}
 
 async def _run_and_submit(conn: Any, delegation_id: str | None, item: dict, log: Logger) -> None:
     name, args, call_id = item["name"], item.get("arguments", "{}"), item["call_id"]
-    log("tool.call", {"name": name, "arguments": args, "delegation_id": delegation_id})
+    log("tool.call", {"name": name, "arguments": args, "call_id": call_id, "delegation_id": delegation_id})
     output = await asyncio.to_thread(run_tool, name, args)
-    log("tool.result", {"name": name, "output": output[:2000], "delegation_id": delegation_id})
+    log("tool.result", {"name": name, "output": output[:2000], "call_id": call_id, "delegation_id": delegation_id})
     await conn.response.item.create(item={"type": "function_call_output", "call_id": call_id, "output": output})
 
 
@@ -37,7 +37,9 @@ async def handle_backend_event(conn: Any, delegation_id: str | None, ev: dict, l
             task = asyncio.create_task(_run_and_submit(conn, delegation_id, item, log))
             _tool_tasks.setdefault(key, []).append(task)
         elif item.get("type") == "web_search_call":
-            log("tool.call", {"name": "web_search", "arguments": json.dumps(item.get("action", {})), "delegation_id": delegation_id})
+            # Hosted: OpenAI runs it and feeds the backend directly; we only see the call.
+            log("tool.call", {"name": "web_search", "arguments": json.dumps(item.get("action", {})), "call_id": item.get("id"), "delegation_id": delegation_id})
+            log("tool.result", {"name": "web_search", "output": "", "call_id": item.get("id"), "delegation_id": delegation_id})
 
     elif kind == "response.output_text.done":
         log("backend.text", {"text": ev.get("text", ""), "delegation_id": delegation_id})
