@@ -78,7 +78,7 @@ body { background: var(--bg); color: var(--fg); }
 .line.agent { align-self: flex-start; background: transparent; padding-left: 4px; }
 
 /* Tool cards: what the person sees. The raw exchange with the model is behind the caret. */
-.tool { align-self: flex-start; max-width: 85%; min-width: min(320px, 100%); border: 1px solid var(--border); border-radius: 12px; background: var(--chip); font-size: 13px; overflow: hidden; }
+.tool { flex: none; align-self: flex-start; max-width: 85%; min-width: min(320px, 100%); border: 1px solid var(--border); border-radius: 12px; background: var(--chip); font-size: 13px; overflow: hidden; }
 .tool-head { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px; border: 0; background: none; color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
 .tool-head:hover { background: rgba(255,255,255,.04); }
 .tool-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
